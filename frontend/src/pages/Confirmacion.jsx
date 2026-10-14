@@ -7,13 +7,29 @@ import Stepper from '../components/Stepper'
 import ConfirmModal from '../components/ConfirmModal'
 import axios from 'axios'
 
+const METODOS_PAGO = [
+  {
+    id: 'efectivo',
+    icon: '💵',
+    label: 'Efectivo',
+    desc: 'Paga al recoger',
+  },
+  {
+    id: 'tarjeta',
+    icon: '💳',
+    label: 'Tarjeta',
+    desc: 'Débito o crédito',
+  },
+]
+
 export default function Confirmacion() {
   const { items, total, horario, vaciar } = useCarrito()
   const { registrarPedido, monedas }      = usePuntos()
-  const [enviando,   setEnviando]         = useState(false)
-  const [exito,      setExito]            = useState(false)
-  const [pedidoId,   setPedidoId]         = useState(null)
+  const [enviando,       setEnviando]     = useState(false)
+  const [exito,          setExito]        = useState(false)
+  const [pedidoId,       setPedidoId]     = useState(null)
   const [confirmarModal, setConfirmarModal] = useState(false)
+  const [metodoPago,     setMetodoPago]   = useState('')
   const toast    = useToast()
   const navigate = useNavigate()
 
@@ -26,10 +42,13 @@ export default function Confirmacion() {
         id: i.producto.id, nombre: i.producto.nombre,
         precio: i.producto.precio, cantidad: i.cantidad, nota: i.nota,
       }))
-      const { data } = await axios.post('/api/pedidos', { productos, horario })
+      const { data } = await axios.post(
+        'https://cafeucolback-production.up.railway.app/api/pedidos',
+        { productos, horario, metodoPago }
+      )
       setPedidoId(data.id)
-      const categorias = [...new Set(items.map(i => i.producto.categoria || 'general'))]
-      registrarPedido({ horario, categorias })
+      const categories = [...new Set(items.map(i => i.producto.categoria || 'general'))]
+      registrarPedido({ horario, categorias: categories })
       vaciar()
       setExito(true)
     } catch (e) {
@@ -74,7 +93,7 @@ export default function Confirmacion() {
       {confirmarModal && (
         <ConfirmModal
           titulo="¿Confirmar pedido?"
-          mensaje={`Enviarás un pedido por $${total} para recoger a las ${horario}. Una vez enviado, solo podrás cancelarlo si aún no está en preparación.`}
+          mensaje={`Enviarás un pedido por $${total} para recoger a las ${horario}. Método de pago: ${metodoPago === 'efectivo' ? 'Efectivo' : 'Tarjeta'}.`}
           labelConfirmar="Sí, enviar pedido"
           labelCancelar="Revisar de nuevo"
           onConfirmar={enviarPedido}
@@ -82,10 +101,14 @@ export default function Confirmacion() {
         />
       )}
 
-      <div className="page-content" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, alignItems: 'start' }} data-grid="confirmar">
-
-        {/* ── Resumen productos ── */}
+      <div 
+        className="page-content" 
+        style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, alignItems: 'start' }} 
+        data-grid="confirmar"
+      >
+        {/* ── Columna Izquierda: Detalles del pedido ── */}
         <div>
+          {/* Resumen productos */}
           <div className="section-title">🧾 Resumen completo del pedido</div>
           <div className="card">
             {items.map(({ producto, cantidad, nota }, i) => (
@@ -95,7 +118,6 @@ export default function Confirmacion() {
                 display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16,
               }}>
                 <div style={{ flex: 1 }}>
-                  {/* Nombre del producto — tipográficamente distinto al precio */}
                   <div style={{ fontWeight: 800, fontSize: 15 }}>{cantidad}× {producto.nombre}</div>
                   {nota && (
                     <div style={{ fontSize: 12, color: 'var(--gris-texto)', marginTop: 4,
@@ -114,11 +136,51 @@ export default function Confirmacion() {
           <button className="btn btn-ghost btn-sm" style={{ marginTop: 12 }} onClick={() => navigate('/carrito')}>
             ← Modificar pedido
           </button>
+
+          {/* Selección de Método de pago */}
+          <div className="section-title" style={{ marginTop: 28 }}>💳 Método de pago</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {METODOS_PAGO.map(m => (
+              <button
+                key={m.id}
+                onClick={() => setMetodoPago(m.id)}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '20px 14px',
+                  borderRadius: 12,
+                  border: metodoPago === m.id
+                    ? '2px solid var(--verde-mid)'
+                    : '2px solid var(--gris-borde)',
+                  background: metodoPago === m.id ? 'var(--amber-light)' : 'var(--gris-bg)',
+                  cursor: 'pointer',
+                  transition: 'all .18s ease',
+                  fontFamily: 'inherit',
+                  position: 'relative',
+                }}
+              >
+                {metodoPago === m.id && (
+                  <span style={{
+                    position: 'absolute', top: 8, right: 8,
+                    background: 'var(--verde-mid)', color: '#fff',
+                    borderRadius: '50%', width: 18, height: 18,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 900,
+                  }}>✓</span>
+                )}
+                <span style={{ fontSize: 32 }}>{m.icon}</span>
+                <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--text-main, #1a1a1a)' }}>{m.label}</span>
+                <span style={{ fontSize: 12, color: 'var(--gris-texto)' }}>{m.desc}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* ── Panel lateral ── */}
+        {/* ── Columna Derecha: Panel lateral de acciones ── */}
         <div style={{ position: 'sticky', top: 80, display: 'flex', flexDirection: 'column', gap: 14 }}>
-
+          
           {/* Horario */}
           <div className="card" style={{ padding: '16px 18px' }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--gris-texto)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
@@ -148,6 +210,24 @@ export default function Confirmacion() {
             </div>
           </div>
 
+          {/* Resumen del método seleccionado en el panel lateral */}
+          {metodoPago && (
+            <div style={{
+              background: 'var(--gris-bg)', border: '1.5px solid var(--gris-borde)',
+              borderRadius: 12, padding: '12px 16px',
+              display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              <span style={{ fontSize: 20 }}>
+                {METODOS_PAGO.find(m => m.id === metodoPago)?.icon}
+              </span>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gris-texto)' }}>
+                Pagarás con <strong style={{ color: 'var(--text-main, #1a1a1a)' }}>
+                  {METODOS_PAGO.find(m => m.id === metodoPago)?.label}
+                </strong>
+              </div>
+            </div>
+          )}
+
           {/* CaféCoins */}
           <div style={{ background: 'var(--amber-light)', border: '2px solid #FDE68A', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 22 }}>🪙</span>
@@ -156,14 +236,22 @@ export default function Confirmacion() {
             </div>
           </div>
 
+          {/* Botón Principal */}
           <button
             className="btn btn-primary btn-full"
             onClick={() => setConfirmarModal(true)}
-            disabled={enviando}
+            disabled={enviando || !metodoPago}
             aria-busy={enviando}
+            title={!metodoPago ? 'Selecciona un método de pago' : ''}
           >
             {enviando ? '⏳ Enviando pedido...' : '✓ Confirmar Pedido'}
           </button>
+
+          {!metodoPago && (
+            <p style={{ fontSize: 12, color: 'var(--gris-texto)', textAlign: 'center', margin: 0 }}>
+              Selecciona un método de pago para continuar
+            </p>
+          )}
         </div>
       </div>
     </div>

@@ -17,7 +17,7 @@ export default function Horario() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    axios.get('/api/horarios')
+    axios.get('https://cafeucolback-production.up.railway.app/api/horarios')
       .then(r => { setHorarios(r.data); setCargando(false) })
       .catch(() => {
         setCargando(false)

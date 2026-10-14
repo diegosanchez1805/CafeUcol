@@ -19,7 +19,7 @@ export default function Historial() {
   const toast    = useToast()
 
   function cargar() {
-    axios.get('/api/pedidos')
+    axios.get('https://cafeucolback-production.up.railway.app/api/pedidos')
       .then(r => { setPedidos(r.data.reverse()); setCargando(false) })
       .catch(() => {
         setCargando(false)

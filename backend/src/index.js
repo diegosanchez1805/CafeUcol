@@ -5,6 +5,24 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Array temporal de usuarios (igual que pedidos)
+const usuarios = [];
+
+app.post('/api/auth/register', (req, res) => {
+  const { nombre, email, password } = req.body;
+  if (usuarios.find(u => u.email === email))
+    return res.status(400).json({ error: 'El correo ya está registrado' });
+  const usuario = { id: Date.now(), nombre, email, password };
+  usuarios.push(usuario);
+  res.status(201).json({ usuario });
+});
+
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  const usuario = usuarios.find(u => u.email === email && u.password === password);
+  if (!usuario) return res.status(401).json({ error: 'Credenciales incorrectas' });
+  res.json({ usuario });
+});
 // Datos del menú basados en tu card sorting
 const menu = {
   desayunos: [

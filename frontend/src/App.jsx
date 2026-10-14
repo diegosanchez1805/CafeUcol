@@ -14,6 +14,7 @@ import Confirmacion   from './pages/Confirmacion'
 import Historial      from './pages/Historial'
 import Perfil         from './pages/Perfil'
 import './index.css'
+import Login from './pages/Login'
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -41,6 +42,7 @@ export default function App() {
                 <LogroToast />
 
                 <Routes>
+                  <Route path="/login" element={<Login />} />
                   <Route path="/"          element={<Menu />} />
                   <Route path="/carrito"   element={<Carrito />} />
                   <Route path="/horario"   element={<Horario />} />

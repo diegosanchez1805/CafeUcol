@@ -278,7 +278,7 @@ export default function Menu() {
   const toast                      = useToast()
 
   useEffect(() => {
-    axios.get('/api/menu')
+    axios.get('https://cafeucolback-production.up.railway.app/api/menu')
       .then(r => { setMenu(r.data); setCargando(false) })
       .catch(() => {
         setCargando(false)
